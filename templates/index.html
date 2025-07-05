@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <title>Search Docs</title>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      padding: 20px;
+
+      background: #f9f9f9;
+
+      color: #333;
+
+    }
+
+    input, select, button {
+
+      margin: 10px 0;
+
+      padding: 8px;
+
+      font-size: 16px;
+
+      border: 1.5px solid #ccc;
+
+      border-radius: 4px;
+
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+      outline-offset: 2px;
+
+    }
+
+    input:focus, select:focus {
+
+      border-color: #2196F3;
+
+      box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
+
+      outline: none;
+
+    }
+
+    button {
+
+      background-color: #b2ebf2;
+
+      border: none;
+
+      cursor: pointer;
+
+      border-radius: 4px;
+
+      font-weight: 600;
+
+      transition: background-color 0.3s ease;
+
+    }
+
+    button:hover {
+
+      background-color: #81d4fa;
+
+    }
+
+    .filters {
+
+      margin-top: 20px;
+
+      display: flex;
+
+      gap: 12px;
+
+      flex-wrap: wrap;
+
+      align-items: center;
+
+    }
+
+    #results {
+
+      margin-top: 30px;
+
+      line-height: 1.4;
+
+    }
+
+    .highlight {
+
+      background-color: rgb(255, 208, 0);
+
+      font-weight: bold;
+
+    }
+
+    .keyword-input {
+
+      display: flex;
+
+      align-items: center;
+
+      margin-bottom: 5px;
+
+    }
+
+    .keyword-input input {
+
+      flex-grow: 1;
+
+      margin-right: 5px;
+
+      font-size: 16px;
+
+      padding: 8px;
+
+      border: 1.5px solid #ccc;
+
+      border-radius: 4px;
+
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+    }
+
+    .keyword-input input:focus {
+
+      border-color: #2196F3;
+
+      box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
+
+      outline: none;
+
+    }
+
+    .keyword-input button {
+
+      background: #e74c3c;
+
+      border: none;
+
+      color: white;
+
+      padding: 6px 12px;
+
+      cursor: pointer;
+
+      border-radius: 4px;
+
+      font-weight: 700;
+
+      font-size: 18px;
+
+      line-height: 1;
+
+      transition: background-color 0.3s ease;
+
+    }
+
+    .keyword-input button:hover {
+
+      background: #c0392b;
+
+    }
+
+    h1 {
+
+      margin-bottom: 15px;
+
+      font-weight: 700;
+
+      color: #007acc;
+
+    }
+
+    .filters h3 {
+
+      margin: 0 10px 0 0;
+
+      font-weight: 600;
+
+      color: #555;
+
+    }
+
+    /* Responsive tweaks */
+
+    @media (max-width: 600px) {
+
+      .filters {
+
+        flex-direction: column;
+
+        gap: 10px;
+
+      }
+
+    }
+
+  </style>
+
+  <script>
+
+    // Dynamically add keyword input fields
+
+    function addKeywordInput(value = '') {
+
+      const container = document.getElementById('keyword-inputs');
+
+      const div = document.createElement('div');
+
+      div.className = 'keyword-input';
+
+ 
+
+      const input = document.createElement('input');
+
+      input.type = 'text';
+
+      input.placeholder = 'Enter keyword';
+
+      input.value = value;
+
+ 
+
+      const btnRemove = document.createElement('button');
+
+      btnRemove.textContent = '×';
+
+      btnRemove.title = 'Remove keyword';
+
+      btnRemove.onclick = () => container.removeChild(div);
+
+ 
+
+      div.appendChild(input);
+
+      div.appendChild(btnRemove);
+
+      container.appendChild(div);
+
+    }
+
+ 
+
+    function doSearch() {
+
+      // Gather all keyword inputs into an array
+
+      const keywordInputs = document.querySelectorAll('#keyword-inputs input');
+
+      const keywords = [];
+
+      keywordInputs.forEach(input => {
+
+        if(input.value.trim() !== '') keywords.push(input.value.trim());
+
+      });
+
+ 
+
+      const filename = document.getElementById('filename').value;
+
+      const year = document.getElementById('year').value;
+
+      const language = document.getElementById('language').value;
+
+      const docType = document.getElementById('doc_type').value;
+
+ 
+
+      const params = new URLSearchParams();
+
+      if (keywords.length) {
+
+        params.append('q', keywords.join(','));
+
+      }
+
+      if (filename) params.append('filename', filename);
+
+      if (year) params.append('year', year);
+
+      if (language) params.append('language', language);
+
+      if (docType) params.append('doc_type', docType);
+
+ 
+
+      fetch(`/search?${params.toString()}`)
+
+        .then(res => res.json())
+
+        .then(results => {
+
+          const container = document.getElementById('results');
+
+          container.innerHTML = '';
+
+ 
+
+          results.forEach(r => {
+
+            const link = `/static/web/viewer.html?file=/docs/${encodeURIComponent(r.filepath)}#page=${r.page_number}&search=${encodeURIComponent(keywords.join(' '))}`;
+
+            const snippet = r.text_snippet || '';
+
+ 
+
+            container.innerHTML += `<div>
+
+              <strong><a href="${link}" target="_blank">${r.filename}</a> - Page ${r.page_number}</strong><br>
+
+              <em>${snippet}</em><br>
+
+              <hr>
+
+            </div>`;
+
+          });
+
+        });
+
+    }
+
+ 
+
+    // Populate year dropdown with a range (example: 2000 to current year)
+
+    function populateYearDropdown() {
+
+      const select = document.getElementById('year');
+
+      const currentYear = new Date().getFullYear();
+
+      const startYear = 2000;
+
+ 
+
+      select.innerHTML = '<option value="">All Years</option>';
+
+      for(let y = currentYear; y >= startYear; y--) {
+
+        const option = document.createElement('option');
+
+        option.value = y;
+
+        option.textContent = y;
+
+        select.appendChild(option);
+
+      }
+
+    }
+
+ 
+
+    window.onload = () => {
+
+      populateYearDropdown();
+
+      addKeywordInput(); // start with one keyword input field
+
+    };
+
+  </script>
+
+</head>
+
+<body>
+
+  <h1>Document Search</h1>
+
+ 
+
+  <div id="keyword-inputs"></div>
+
+  <button onclick="addKeywordInput()" style="padding:6px 12px;">Add keyword</button>
+
+ 
+
+  <input type="text" id="filename" placeholder="Optional filename filter">
+
+ 
+
+  <div class="filters">
+
+    <h3>Limit To</h3>
+
+ 
+
+    <select id="year">
+
+      <!-- dynamically populated -->
+
+    </select>
+
+ 
+
+    <select id="language">
+
+      <option value="">All Languages</option>
+
+      <option value="en">English</option>
+
+      <option value="fr">French</option>
+
+      <option value="de">German</option>
+
+    </select>
+
+ 
+
+    <select id="doc_type">
+
+      <option value="">All Document Types</option>
+
+      <option value="pdf">PDF</option>
+
+      <option value="docx">Word</option>
+
+      <option value="txt">Text</option>
+
+    </select>
+
+  </div>
+
+ 
+
+  <button onclick="doSearch()">Search</button>
+
+ 
+
+  <div id="results"></div>
+
+</body>
+
+</html>
