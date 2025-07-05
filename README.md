@@ -4,3 +4,4 @@
 - Store some files in the folder (pdf)
 - Run your indexer
 - Run your flask (app)
+- We are using pdf.js to view the files using Flask
